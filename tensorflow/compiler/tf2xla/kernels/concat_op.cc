@@ -102,9 +102,9 @@ class ConcatBaseOp : public XlaOpKernel {
     bool size_sum_initialized = false;
     
     for (int i = 0; i < N; ++i) {
-      auto input_shape_or = ctx->InputXlaShape(i);
+      auto input_shape_or = ctx->builder()->GetShape(input_data[i]);
       OP_REQUIRES_OK(ctx, input_shape_or.status());
-      const xla::Shape& input_shape = *input_shape_or;
+      const xla::Shape& input_shape = input_shape_or.value();
       
       xla::XlaOp input_size;
       if (input_shape.is_dynamic_dimension(axis)) {
