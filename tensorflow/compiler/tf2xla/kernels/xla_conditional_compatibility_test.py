@@ -15,19 +15,16 @@
 # ==============================================================================
 """Tests for XLA conditional compatibility with Python control flow operations.
 
-This test addresses GitHub issue #105131: ConcatV2 op kernel constraint mismatch 
-when using jit_compile=True with Python control flow (filter, map, zip).
+This test addresses GitHub issue #105131: ConcatV2 op kernel constraint
+mismatch when using jit_compile=True with Python control flow (filter,
+map, zip).
 """
 
 from absl.testing import parameterized
-import numpy as np
 
 import tensorflow as tf
 from tensorflow.python.platform import test
 from tensorflow.python.framework import dtypes
-from tensorflow.python.ops import array_ops
-from tensorflow.python.framework import constant_op
-from tensorflow.python.framework import test_util
 
 
 class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
@@ -50,11 +47,12 @@ class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
     
     @tf.function(jit_compile=True)
     def filter_and_concat(x):
-      # Use Python filter with tf.concat - this previously caused kernel constraint errors
-      filtered_features = list(filter(lambda z: tf.reduce_sum(z) > 0.5, [x, x * 2, x * 3]))
-      if not filtered_features:
+      # Use filter to get tensors above threshold
+      filtered = list(filter(
+          lambda z: tf.reduce_sum(z) > 0.5, [x, x * 2, x * 3]))
+      if not filtered:
         return tf.zeros_like(x)
-      return tf.concat(filtered_features, axis=-1)
+      return tf.concat(filtered, axis=-1)
     
     # Test with different input shapes and dtypes
     if dtype.is_integer:
@@ -79,7 +77,9 @@ class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
     def map_and_concat(x):
       # Use Python map with tf.concat
       features = [x, x + 1, x * 2]
-      mapped_features = list(map(lambda z: tf.nn.sigmoid(z) if not dtype.is_integer else z, features))
+      mapped_features = list(map(
+          lambda z: tf.nn.sigmoid(z) if not dtype.is_integer else z,
+          features))
       return tf.concat(mapped_features, axis=-1)
     
     if dtype.is_integer:
@@ -133,9 +133,13 @@ class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
 
       def call(self, x):
         # This exact pattern from the GitHub issue
-        filtered_features = list(filter(lambda z: tf.reduce_sum(z) > 0.5, [x, x * 2, x * 3]))
-        mapped_features = list(map(lambda z: tf.nn.sigmoid(z), filtered_features))
-        zipped_data = list(zip(mapped_features, [tf.ones_like(x) for _ in range(len(mapped_features))]))
+        filtered_features = list(filter(
+            lambda z: tf.reduce_sum(z) > 0.5, [x, x * 2, x * 3]))
+        mapped_features = list(map(
+            lambda z: tf.nn.sigmoid(z), filtered_features))
+        zipped_data = list(zip(
+            mapped_features,
+            [tf.ones_like(x) for _ in range(len(mapped_features))]))
         combined = tf.concat(zipped_data, axis=-1)
         return self.d3(combined)
 
@@ -151,7 +155,7 @@ class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
     def compiled_forward(inputs):
       return model(inputs)
     
-    # This should not raise: OpKernel 'ConcatV2' has constraint on attr 'T' not in NodeDef
+    # Check this doesn't raise OpKernel constraint error
     xla_out = compiled_forward(x)
     self.assertIsNotNone(xla_out)
     
@@ -159,7 +163,7 @@ class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
     self.assertEqual(eager_out.shape, xla_out.shape)
 
   def test_concat_with_mixed_control_flow_patterns(self):
-    """Test complex combinations of Python control flow with concat operations."""
+    """Test complex combinations of control flow with concat operations."""
     
     @tf.function(jit_compile=True)
     def complex_control_flow_concat(x):
@@ -168,7 +172,8 @@ class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
       
       # Step 1: Filter
       base_features = [x, x * 2, x * 3, x + 1]
-      filtered = list(filter(lambda z: tf.reduce_sum(tf.abs(z)) > 0.1, base_features))
+      filtered = list(filter(
+          lambda z: tf.reduce_sum(tf.abs(z)) > 0.1, base_features))
       
       # Step 2: Map
       mapped = list(map(lambda z: tf.nn.tanh(z), filtered))

@@ -13,7 +13,7 @@ instead of being incorrectly constrained to only DT_FLOAT8_E4M3FN.
 """
 
 import sys
-import traceback
+
 
 def simulate_kernel_constraint_fix():
     """Simulate the kernel constraint fix logic without importing TensorFlow."""
@@ -82,7 +82,7 @@ def validate_fix_in_source_code():
     """Validate that the fix has been properly applied to the source code."""
     
     try:
-        with open('/workspaces/tensorflow/tensorflow/compiler/tf2xla/xla_gpu_backend.cc', 'r') as f:
+        with open('/home/runner/work/tensorflow/tensorflow/tensorflow/compiler/tf2xla/xla_gpu_backend.cc', 'r') as f:
             content = f.read()
         
         print("=== Source Code Fix Validation ===")

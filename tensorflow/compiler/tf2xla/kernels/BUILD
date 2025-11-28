@@ -3457,17 +3457,9 @@ tf_py_strict_test(
         "xla_test",
     ],
     deps = [
-        "//tensorflow/python:array_ops",
-        "//tensorflow/python:client_testlib", 
-        "//tensorflow/python:constant_op",
+        "//tensorflow/python:client_testlib",
         "//tensorflow/python:dtypes",
-        "//tensorflow/python:framework_ops",
-        "//tensorflow/python:math_ops",
-        "//tensorflow/python:nn_ops",
         "//tensorflow/python:platform_test",
-        "//tensorflow/python/eager:def_function",
-        "//tensorflow/python/framework:test_util",
-        "//third_party/py/numpy",
         "@absl_py//absl/testing:parameterized",
     ],
 )
