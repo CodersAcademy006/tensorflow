@@ -140,7 +140,11 @@ class XlaConditionalCompatibilityTest(test.TestCase, parameterized.TestCase):
         zipped_data = list(zip(
             mapped_features,
             [tf.ones_like(x) for _ in range(len(mapped_features))]))
-        combined = tf.concat(zipped_data, axis=-1)
+        # Flatten the zipped tuples for concat
+        flattened = []
+        for pair in zipped_data:
+          flattened.extend(pair)
+        combined = tf.concat(flattened, axis=-1)
         return self.d3(combined)
 
     model = TestModel()

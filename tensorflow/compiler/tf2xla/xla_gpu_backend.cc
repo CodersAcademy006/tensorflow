@@ -26,11 +26,12 @@ bool GpuOpFilter(KernelDef* kdef) {
   if (kdef->op() == "Assert") {
     AddDtypeToKernelDefConstraint("T", DT_STRING, kdef);
   }
-  // Fix for issue #105131: Ensure ConcatV2 kernels support full range of GPU types
-  // instead of being incorrectly constrained to only DT_FLOAT8_E4M3FN when used
-  // with Python control flow operations (filter, map, zip).
+  // Fix for issue #105131: Ensure ConcatV2 kernels support full range of GPU
+  // types when they are incorrectly constrained to only DT_FLOAT8_E4M3FN. This
+  // can occur in various scenarios including Python control flow (filter, map,
+  // zip) combined with tf.concat under XLA compilation.
   if (kdef->op() == "ConcatV2") {
-    // Check if the kernel has overly restrictive type constraints
+    // Check if the kernel has an overly restrictive type constraint
     for (auto& constraint : *kdef->mutable_constraint()) {
       if (constraint.name() == "T") {
         auto& type_list = constraint.allowed_values().list();
@@ -38,7 +39,7 @@ bool GpuOpFilter(KernelDef* kdef) {
         // all supported GPU types to fix the kernel constraint mismatch
         if (type_list.type_size() == 1 && 
             type_list.type(0) == DT_FLOAT8_E4M3FN) {
-          // Clear the overly restrictive constraint and add all supported GPU types
+          // Clear the overly restrictive constraint and add all GPU types
           constraint.mutable_allowed_values()->mutable_list()->clear_type();
           for (const auto& dtype : kGpuAllTypes) {
             constraint.mutable_allowed_values()->mutable_list()->add_type(dtype);

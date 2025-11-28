@@ -80,9 +80,34 @@ def simulate_kernel_constraint_fix():
 
 def validate_fix_in_source_code():
     """Validate that the fix has been properly applied to the source code."""
+    import os
+    
+    # Find the source file path relative to this script's location
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    source_path = os.path.join(
+        script_dir, 'tensorflow/compiler/tf2xla/xla_gpu_backend.cc')
+    
+    # Fallback paths for different environments
+    fallback_paths = [
+        '/home/runner/work/tensorflow/tensorflow/tensorflow/compiler/tf2xla/xla_gpu_backend.cc',
+        '/workspaces/tensorflow/tensorflow/compiler/tf2xla/xla_gpu_backend.cc',
+    ]
+    
+    file_path = None
+    if os.path.exists(source_path):
+        file_path = source_path
+    else:
+        for path in fallback_paths:
+            if os.path.exists(path):
+                file_path = path
+                break
+    
+    if not file_path:
+        print("❌ Could not find xla_gpu_backend.cc source file")
+        return False
     
     try:
-        with open('/home/runner/work/tensorflow/tensorflow/tensorflow/compiler/tf2xla/xla_gpu_backend.cc', 'r') as f:
+        with open(file_path, 'r') as f:
             content = f.read()
         
         print("=== Source Code Fix Validation ===")
