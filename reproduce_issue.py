@@ -29,8 +29,11 @@ class TestModel(tf.keras.Model):
             print(f"Debug: zipped_data[0] types: {[type(item) for item in zipped_data[0]]}")
             print(f"Debug: zipped_data[0] dtypes: {[item.dtype if hasattr(item, 'dtype') else 'N/A' for item in zipped_data[0]]}")
         
-        # This tf.concat call triggers the ConcatV2 kernel constraint error
-        combined = tf.concat(zipped_data, axis=-1)
+        # Flatten the zipped tuples before tf.concat
+        flattened = []
+        for pair in zipped_data:
+            flattened.extend(pair)
+        combined = tf.concat(flattened, axis=-1)
         return self.d3(combined)
 
 def get_default_model():
