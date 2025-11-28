@@ -94,9 +94,13 @@ class XlaConditionalCompatibilityTest(tf.test.TestCase):
     # (the historically-broken behavior) OR Autograph may not transform the
     # function and it will run "as-is" (in which case it will simply return
     # a tensor). Accept both outcomes to make the test CI-safe.
+    #
+    # Expected exception types:
+    # - OperatorNotAllowedInGraphError (subclass of TypeError): symbolic tensor used as Python bool
+    # - ValueError: other compilation failures
     try:
       compiled_result = compiled_function(x)
-    except Exception as e:
+    except (tf.errors.OperatorNotAllowedInGraphError, TypeError, ValueError) as e:
       error_msg = str(e)
       # Verify it's the expected symbolic tensor error
       self.assertTrue(
