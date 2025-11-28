@@ -3443,3 +3443,31 @@ tf_kernel_library(
         "//tensorflow/compiler/tf2xla:xla_op_registry",
     ],
 )
+
+# Test for GitHub issue #105131 fix: XLA conditional compatibility with Python control flow
+load("//tensorflow:tensorflow.bzl", "tf_py_strict_test")
+
+tf_py_strict_test(
+    name = "xla_conditional_compatibility_test",
+    size = "medium", 
+    srcs = ["xla_conditional_compatibility_test.py"],
+    python_version = "PY3",
+    tags = [
+        "requires-gpu-sm35",
+        "xla_test",
+    ],
+    deps = [
+        "//tensorflow/python:array_ops",
+        "//tensorflow/python:client_testlib", 
+        "//tensorflow/python:constant_op",
+        "//tensorflow/python:dtypes",
+        "//tensorflow/python:framework_ops",
+        "//tensorflow/python:math_ops",
+        "//tensorflow/python:nn_ops",
+        "//tensorflow/python:platform_test",
+        "//tensorflow/python/eager:def_function",
+        "//tensorflow/python/framework:test_util",
+        "//third_party/py/numpy",
+        "@absl_py//absl/testing:parameterized",
+    ],
+)
