@@ -97,7 +97,7 @@ class EigTest(test.TestCase):
   @test_util.run_cuda_only
   @test_util.run_deprecated_v1
   def testGpuPlacementRaisesUnimplemented(self):
-    config = config_pb2.ConfigProto(allow_soft_placement=True)
+    config = config_pb2.ConfigProto(allow_soft_placement=False)
     with self.session(config=config) as sess:
       with ops.device("/GPU:0"):
         matrix = constant_op.constant([[1.0, 0.0], [0.0, 1.0]])
