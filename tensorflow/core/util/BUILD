@@ -720,7 +720,10 @@ check_deps(
 tf_kernel_library(
     name = "cuda_solvers",
     srcs = ["cuda_solvers.cc"],
-    hdrs = ["gpu_solvers.h"],
+    hdrs = [
+        "cuda_solvers.h",
+        "gpu_solvers.h",
+    ],
     compatible_with = [],
     features = ["-layering_check"],
     visibility = ["//tensorflow/core/kernels:friends"],

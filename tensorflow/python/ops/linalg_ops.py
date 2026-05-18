@@ -392,6 +392,9 @@ def eig(tensor, name=None):
   N-by-N matrices in `tensor` such that
   `tensor[...,:,:] * v[..., :,i] = e[..., i] * v[...,:,i]`, for i=0...N-1.
 
+  Note: `tf.linalg.eig` does not yet have a GPU kernel. Explicit GPU placement
+  will raise an error; CPU-only builds will fall back to CPU with a warning.
+
   Args:
     tensor: `Tensor` of shape `[..., N, N]`. Only the lower triangular part of
       each inner inner matrix is referenced.

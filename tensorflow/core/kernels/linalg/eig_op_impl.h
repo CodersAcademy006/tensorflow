@@ -31,6 +31,9 @@ limitations under the License.
 
 namespace tensorflow {
 
+// Logs a one-time warning when an explicit GPU placement falls back to CPU.
+void MaybeWarnOnGpuFallback(const OpKernel& kernel);
+
 template <class InputScalar, class OutputScalar>
 class EigOp : public LinearAlgebraOp<InputScalar, OutputScalar> {
  public:
@@ -89,6 +92,11 @@ class EigOp : public LinearAlgebraOp<InputScalar, OutputScalar> {
     if (compute_v_) {
       outputs->at(1) = eig.eigenvectors();
     }
+  }
+
+  void Compute(OpKernelContext* context) override {
+    MaybeWarnOnGpuFallback(*this);
+    Base::Compute(context);
   }
 
  private:

@@ -31,6 +31,7 @@
 #include "tensorflow/core/platform/mutex.h"
 #include "tensorflow/core/platform/stream_executor.h"
 #include "tensorflow/core/platform/types.h"
+#include "tensorflow/core/util/cuda_solvers.h"
 #include "tensorflow/core/util/gpu_solvers.h"
 
 // The CUDA cublas_api.h API contains const-correctness errors. Instead of
@@ -1035,6 +1036,23 @@ static inline Status TrsmBatchedImpl(
   }
 
 TF_CALL_LAPACK_TYPES(TRSM_BATCHED_INSTANCE);
+
+Status GpuEigSupport::Launch(const Tensor& input, bool compute_v,
+                             Tensor* eigenvalues, Tensor* eigenvectors) {
+  return LaunchEigOnGpu(context_, input, compute_v, eigenvalues, eigenvectors);
+}
+
+Status LaunchEigOnGpu(OpKernelContext* context, const Tensor& input,
+                      bool compute_v, Tensor* eigenvalues,
+                      Tensor* eigenvectors) {
+  (void)context;
+  (void)input;
+  (void)compute_v;
+  (void)eigenvalues;
+  (void)eigenvectors;
+  return errors::Unimplemented(
+      "cuSOLVER geev integration for tf.linalg.eig is not yet available.");
+}
 
 }  // namespace tensorflow
 

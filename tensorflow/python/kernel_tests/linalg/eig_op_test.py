@@ -14,11 +14,15 @@
 # ==============================================================================
 """Tests for tensorflow.ops.linalg_ops.eig."""
 
+import sys
+
 import numpy as np
 
+from tensorflow.core.protobuf import config_pb2
 from tensorflow.python.framework import constant_op
 from tensorflow.python.framework import dtypes as dtypes_lib
 from tensorflow.python.framework import errors
+from tensorflow.python.framework import ops
 from tensorflow.python.framework import test_util
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import gen_linalg_ops
@@ -72,6 +76,37 @@ class EigTest(test.TestCase):
       self.assertAllClose(val[2], val[4])
       self.assertAllEqual(val[4], val[5])
       self.assertAllEqual(val[1], val[3])
+
+  @test_util.run_deprecated_v1
+  def testGpuPlacementWarnsWhenNoGpuSupport(self):
+    if test.is_built_with_gpu_support():
+      self.skipTest("GPU kernels are available; fallback warning not expected.")
+    config = config_pb2.ConfigProto(allow_soft_placement=True)
+    with self.session(config=config) as sess:
+      with ops.device("/GPU:0"):
+        matrix = constant_op.constant([[1.0, 0.0], [0.0, 1.0]])
+        e, v = linalg_ops.eig(matrix)
+      with self.captureWritesToStream(sys.stderr) as logged:
+        sess.run([e, v])
+        sess.run([e, v])
+    message = ("tf.linalg.eig has no registered GPU kernel and will execute on "
+               "CPU. This may incur host-device transfer overhead.")
+    self.assertIn(message, logged.contents())
+    self.assertEqual(logged.contents().count(message), 1)
+
+  @test_util.run_cuda_only
+  @test_util.run_deprecated_v1
+  def testGpuPlacementRaisesUnimplemented(self):
+    config = config_pb2.ConfigProto(allow_soft_placement=True)
+    with self.session(config=config) as sess:
+      with ops.device("/GPU:0"):
+        matrix = constant_op.constant([[1.0, 0.0], [0.0, 1.0]])
+        e, v = linalg_ops.eig(matrix)
+      with self.assertRaisesRegex(
+          errors.UnimplementedError,
+          "GPU kernel for tf.linalg.eig is not yet implemented; CPU fallback "
+          "disabled for explicit visibility."):
+        sess.run([e, v])
 
   def testMatrixThatFailsWhenFlushingDenormsToZero(self):
     # Test a 32x32 matrix which is known to fail if denorm floats are flushed to

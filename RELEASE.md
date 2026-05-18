@@ -33,6 +33,11 @@
 * <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
 * <NOTES SHOULD BE GROUPED PER AREA>
 
+* `tf.linalg`
+    * Adds explicit GPU kernel scaffolding for `tf.linalg.eig` so GPU placement
+      now raises a clear error instead of silently falling back to CPU (CPU-only
+      builds emit a warning when falling back).
+
 * `tf.data`
     * Adds `NoneTensorSpec` to the public API so that `None`s in `element_spec`
       can be identified via `isinstance(..., tf.NoneTensorSpec)`.
