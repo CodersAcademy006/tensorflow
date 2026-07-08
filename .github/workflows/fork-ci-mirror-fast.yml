@@ -1,0 +1,63 @@
+# CPU-only fork CI mirror for lint validation before upstream PR submission.
+# Mirrors tensorflow/tensorflow's PyLint presubmit (.github/workflows/pylint-presubmit.yml),
+# which lints only the Python files changed in the PR — not the whole tree — using
+# the upstream pylintrc. Runs on GitHub-hosted ubuntu-latest; no GPU/CUDA needed.
+name: Fork CI Mirror (Lint)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-check:
+    # Run on regular PR events, manual dispatch, or a "/run-ci-mirror" PR comment.
+    if: |
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '/run-ci-mirror'))
+    name: PyLint Mirror
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        fetch-depth: 0
+    - name: Set up Python 3.9
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      with:
+        python-version: "3.9"
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint==2.13.9 numpy wheel
+    - name: Determine changed Python files
+      id: changed
+      run: |
+        set -euo pipefail
+        BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        if [ -z "$BASE_SHA" ]; then
+          # No PR payload (workflow_dispatch / comment): compare against origin default branch.
+          git fetch origin master --depth=50 || git fetch origin main --depth=50 || true
+          BASE_SHA="$(git rev-parse origin/master 2>/dev/null || git rev-parse origin/main)"
+        fi
+        CHANGED="$(git diff --name-only --diff-filter=d "$BASE_SHA" HEAD | grep '\.py$' || true)"
+        {
+          echo "files<<EOF"
+          echo "$CHANGED"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+        echo "Changed Python files:"
+        echo "$CHANGED"
+    - name: Run PyLint on changed Python files
+      run: |
+        set -euo pipefail
+        FILES="${{ steps.changed.outputs.files }}"
+        if [ -z "$(echo "$FILES" | tr -d '[:space:]')" ]; then
+          echo "No Python files changed — nothing to lint."
+          exit 0
+        fi
+        echo "$FILES" | xargs pylint --rcfile=tensorflow/tools/ci_build/pylintrc
